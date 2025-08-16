@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  listings  Listing[]
+  reviews   Review[]
+  messages  Message[]
+  favorites Favorite[]
+  banned    Boolean  @default(false)
+}
+
+model Listing {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  type        ListingType
+  status      ListingStatus @default(PENDING)
+  price       Int
+  currency    String   @default("USD")
+  city        String
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  bedrooms    Int?
+  bathrooms   Int?
+  areaSqm     Int?
+  mediaUrls   String[]
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  messages    Message[]
+  reviews     Review[]
+  favorites   Favorite[]
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  sender     User     @relation(fields: [senderId], references: [id])
+  senderId   String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  listingId  String
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+  createdAt DateTime @default(now())
+  @@unique([userId, listingId])
+}
+
+model Settings {
+  id                     String  @id @default(cuid())
+  commissionPercent      Int     @default(3)
+  featuredAdDailyPrice   Int     @default(5)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  AGENCY
+  ADMIN
+}
+
+enum ListingType {
+  RENT
+  SALE
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
